@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Secure-RDP-Manager</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 20px auto;
+      padding: 20px;
+      background-color: #f5f5f5;
+      color: #333;
+    }
+
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .status {
+      font-size: 1.1em;
+      margin: 15px 0;
+    }
+
+    .status span {
+      font-weight: bold;
+      color: #2980b9;
+    }
+
+    form {
+      margin: 10px 0;
+    }
+
+    button {
+      padding: 10px 20px;
+      font-size: 1em;
+      color: white;
+      background-color: #3498db;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+
+    button:hover:not(:disabled) {
+      background-color: #2980b9;
+    }
+
+    button:disabled {
+      background-color: #bdc3c7;
+      cursor: not-allowed;
+    }
+
+    .section {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      margin-bottom: 20px;
+    }
+
+    /* 弹窗样式 */
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: rgba(0, 0, 0, 0.5);
+    }
+
+    .modal-content {
+      background-color: white;
+      margin: 15% auto;
+      padding: 20px;
+      width: 300px;
+      border-radius: 5px;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    }
+
+    .modal-content input {
+      width: 100%;
+      padding: 8px;
+      margin: 10px 0;
+      box-sizing: border-box;
+    }
+
+    .error {
+      color: red;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Secure-RDP-Manager</h1>
+
+  <div class="section">
+    <p class="status">RDP服务状态：<span>{{rdpStatus}}</span></p>
+    <form action="/enable" method="post">
+      <button type="submit" {{rdpEnableDisabled}}>开启服务</button>
+    </form>
+    <form action="/disable" method="post">
+      <button type="submit" {{rdpDisableDisabled}}>关闭服务</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <p class="status">代理状态：<span>{{proxyStatus}}</span></p>
+    <form action="/openproxy" method="post">
+      <button type="submit" {{proxyOpenDisabled}}>开启代理</button>
+    </form>
+    <form action="/closeproxy" method="post">
+      <button type="submit" {{proxyCloseDisabled}}>关闭代理</button>
+    </form>
+  </div>
+
+  <div class="section">
+    <button onclick="showModal()">修改密码</button>
+  </div>
+
+  <!-- 密码修改弹窗 -->
+  <div id="passwordModal" class="modal">
+    <div class="modal-content">
+      <h2>修改密码</h2>
+      <form id="passwordForm">
+        <label>用户名：</label>
+        <input type="text" name="userName" value="{{userName}}" required>
+        <label>新密码：</label>
+        <input type="password" name="newPassword" required>
+        <label>确认新密码：</label>
+        <input type="password" name="confirmPassword" required>
+        <div id="errorMsg" class="error"></div>
+        <button type="submit">确认修改</button>
+        <button type="button" onclick="hideModal()">取消</button>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    function showModal() {
+      document.getElementById("passwordModal").style.display = "block";
+      document.getElementById("errorMsg").textContent = "";
+    }
+
+    function hideModal() {
+      document.getElementById("passwordModal").style.display = "none";
+    }
+
+    document.getElementById("passwordForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const form = e.target;
+      const userName = form.querySelector('[name="userName"]').value;
+      const newPassword = form.querySelector('[name="newPassword"]').value;
+      const confirmPassword = form.querySelector('[name="confirmPassword"]').value;
+
+      const data = {
+        userName,
+        newPassword,
+        confirmPassword
+      };
+
+      try {
+        const response = await fetch("/change-password", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(data)
+        });
+        const text = await response.text();
+
+        if (response.ok) {
+          alert(text);
+          hideModal();
+          // 强制重新登录
+          window.location.reload(true);
+        } else {
+          document.getElementById("errorMsg").textContent = text;
+        }
+      } catch (error) {
+        document.getElementById("errorMsg").textContent = error.message || "修改失败，请稍后重试";
+      }
+    });
+  </script>
+</body>
+
+</html>
