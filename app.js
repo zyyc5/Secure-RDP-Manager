@@ -6,7 +6,7 @@ const frpc = require("./frpc-manager");
 const { basicAuth, changePassword, getUserName } = require("./auth");
 const app = express();
 const port = require("./config").PORT;
-
+const rdpWarp = require("./rdp-warp");
 
 app.use(express.json())
 app.use(basicAuth)
@@ -15,6 +15,11 @@ const htmlTemplate = fs.readFileSync(
   path.join(__dirname, "views", "index.html"),
   "utf8"
 );
+
+const getIp = req => {
+  const ip = req.headers["x-forwarded-for"] || req.connection.remoteAddress;
+  return ip.replace("::ffff:", "");
+};
 
 app.get("/", async (req, res) => {
   const [appStatus, isFrpcInstalled, proxyStatus] = await Promise.all([
@@ -42,6 +47,10 @@ app.get("/", async (req, res) => {
     .replace(
       "{{userName}}",
       getUserName() || "未登录"
+    )
+    .replace(
+      "{{IP}}",
+      getIp(req) || "0.0.0.0"
     )
 
   res.send(html);
@@ -96,6 +105,7 @@ app.listen(port, async() => {
     console.warn("frpc 未安装，无法暴露rdp到公网, 只能局域网连接, 请先安装和配置frpc");
   }
   rdpManager.startMonitor();
+  rdpWarp.start()
   console.log(`Web服务运行在 http://localhost:${port}`);
 });
 
