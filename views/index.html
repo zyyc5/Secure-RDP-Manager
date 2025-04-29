@@ -3,27 +3,30 @@
 
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Secure-RDP-Manager</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Secure RDP Manager</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      max-width: 600px;
-      margin: 20px auto;
-      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 3vw 4vw;
       background-color: #f5f5f5;
       color: #333;
+      font-size: clamp(14px, 3.8vw, 16px);
+      line-height: 1.5;
     }
 
     h1 {
       color: #2c3e50;
       text-align: center;
-      margin-bottom: 30px;
+      margin: 4vw 0 6vw;
+      font-size: clamp(20px, 5.5vw, 26px);
     }
 
     .status {
-      font-size: 1.1em;
-      margin: 15px 0;
+      font-size: clamp(13px, 3.5vw, 15px);
+      margin: 3vw 0;
     }
 
     .status span {
@@ -32,18 +35,23 @@
     }
 
     form {
-      margin: 10px 0;
+      margin: 2.5vw 0;
     }
 
     button {
-      padding: 10px 20px;
-      font-size: 1em;
+      padding: clamp(10px, 2.8vw, 12px) clamp(18px, 4.5vw, 22px);
+      font-size: clamp(13px, 3.5vw, 15px);
       color: white;
       background-color: #3498db;
       border: none;
       border-radius: 5px;
       cursor: pointer;
       transition: background-color 0.3s;
+      width: 100%;
+      box-sizing: border-box;
+      margin: 2vw 0;
+      min-height: 44px;
+      /* 确保触控区域足够大 */
     }
 
     button:hover:not(:disabled) {
@@ -57,10 +65,10 @@
 
     .section {
       background-color: white;
-      padding: 20px;
+      padding: 4vw;
       border-radius: 8px;
       box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
-      margin-bottom: 20px;
+      margin-bottom: 4vw;
     }
 
     /* 弹窗样式 */
@@ -72,52 +80,104 @@
       width: 100%;
       height: 100%;
       background-color: rgba(0, 0, 0, 0.5);
+      z-index: 1000;
     }
 
     .modal-content {
       background-color: white;
-      margin: 15% auto;
-      padding: 20px;
-      width: 300px;
+      margin: 15vh auto;
+      padding: 4vw;
+      width: min(85%, 340px);
       border-radius: 5px;
       box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+      box-sizing: border-box;
     }
 
     .modal-content input {
       width: 100%;
-      padding: 8px;
-      margin: 10px 0;
+      padding: clamp(8px, 2.2vw, 10px);
+      margin: 2.5vw 0;
       box-sizing: border-box;
+      font-size: clamp(13px, 3.5vw, 15px);
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+
+    .modal-content label {
+      font-size: clamp(13px, 3.5vw, 15px);
+      display: block;
+      margin-bottom: 1.5vw;
     }
 
     .error {
       color: red;
-      margin: 10px 0;
+      margin: 2.5vw 0;
+      font-size: clamp(12px, 3.2vw, 14px);
+    }
+
+    /* 媒体查询：小屏幕优化 */
+    @media (max-width: 480px) {
+      body {
+        padding: 2vw 3vw;
+      }
+
+      h1 {
+        font-size: clamp(18px, 5vw, 22px);
+        margin: 3vw 0 5vw;
+      }
+
+      .section {
+        padding: 3.5vw;
+      }
+
+      button {
+        padding: clamp(9px, 2.5vw, 11px) clamp(16px, 4vw, 20px);
+        font-size: clamp(12px, 3.2vw, 14px);
+      }
+
+      .modal-content {
+        width: min(90%, 300px);
+        margin: 10vh auto;
+        padding: 5vw;
+      }
+
+      .modal-content input {
+        padding: clamp(7px, 2vw, 9px);
+      }
     }
   </style>
 </head>
 
 <body>
-  <h1>Secure-RDP-Manager</h1>
+  <h1>Secure RDP Manager</h1>
 
-  <div class="section">
+  <!-- <div class="section">
     <p class="status">RDP服务状态：<span>{{rdpStatus}}</span></p>
     <form action="/enable" method="post">
-      <button type="submit" {{rdpEnableDisabled}}>开启服务</button>
+      <button type="submit" style="display: {{rdpEnableDisabled}}">开启服务</button>
     </form>
     <form action="/disable" method="post">
-      <button type="submit" {{rdpDisableDisabled}}>关闭服务</button>
+      <button type="submit" style="display: {{rdpDisableDisabled}}">关闭服务</button>
+    </form>
+  </div> -->
+
+  <div class="section">
+    <p class="status">当前IP：<span>{{IP}} ({{whiteListStatus}})</span> </p>
+    <form action="/joinwhitelist" method="post">
+      <button type="submit" style="display: {{whiteListJoinDisabled}}">加入白名单</button>
+    </form>
+    <form action="/removewhitelist" method="post">
+      <button type="submit" style="display: {{whiteListRemoveDisabled}}">移出白名单</button>
     </form>
   </div>
 
   <div class="section">
-    <p class="status">代理状态：<span>{{proxyStatus}}</span></p>
-    <p class="status">当前IP：<span>{{IP}}</span></p>
+    <p class="status">frp代理状态：<span>{{proxyStatus}}</span></p>
     <form action="/openproxy" method="post">
-      <button type="submit" {{proxyOpenDisabled}}>开启代理</button>
+      <button type="submit" style="display: {{proxyOpenDisabled}}">开启代理</button>
     </form>
     <form action="/closeproxy" method="post">
-      <button type="submit" {{proxyCloseDisabled}}>关闭代理</button>
+      <button type="submit" style="display: {{proxyCloseDisabled}}">关闭代理</button>
     </form>
   </div>
 

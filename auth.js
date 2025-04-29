@@ -15,8 +15,10 @@ loadConfig();
 // 添加基本认证中间件
 const basicAuth = (req, res, next) => {
 
-  const USERNAME = config.USERNAME || "admin";
-  const PASSWORD = config.PASSWORD || "password123"; 
+  const {
+    USERNAME = "admin",
+    PASSWORD = "password123",
+  } = config
 
   // 获取请求头中的认证信息
   const authHeader = req.headers.authorization;

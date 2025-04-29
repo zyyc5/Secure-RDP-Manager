@@ -1,9 +1,10 @@
 const net = require('net');
 const fs = require('fs');
+const rdpManager = require('./rdp-manager');
 const config = require('./config.json');
 
 // 配置
-const LISTEN_PORT = config.LOCAL_PORT; // 中间件监听的端口（frp 客户端转发到的端口）
+const LISTEN_PORT = config.RDP_PROXY_PORT; // 中间件监听的端口（frp 客户端转发到的端口）
 const RDP_HOST = '127.0.0.1'; // RDP 服务地址
 const RDP_PORT = config.RDP_PORT; // RDP 服务端口
 const LOG_FILE = './rdp_connections.log'; // 日志文件路径
@@ -12,6 +13,12 @@ const LOG_FILE = './rdp_connections.log'; // 日志文件路径
 const PROXY_PROTOCOL_V2_SIGNATURE = Buffer.from([
   0x0D, 0x0A, 0x0D, 0x0A, 0x00, 0x0D, 0x0A, 0x51, 0x55, 0x49, 0x54, 0x0A
 ]);
+
+const logger = (log)=>{
+  const logEntry = `${new Date().toLocaleString()} - ${log} \n`;
+  console.log(logEntry);
+  fs.appendFile(LOG_FILE, logEntry, {}, ()=>{});
+}
 
 // 创建 TCP 服务器
 const server = net.createServer((clientSocket) => {
@@ -52,11 +59,21 @@ const server = net.createServer((clientSocket) => {
           throw new Error('Unsupported address family');
         }
 
-        // 异步记录客户端真实 IP 和端口
-        const logEntry = `${new Date().toISOString()} - Client IP: ${clientIP}, Port: ${clientPort}\n`;
-        await fs.appendFile(LOG_FILE, logEntry, {}, ()=>{});
-        console.log(logEntry);
-        // clientSocket.end();
+        // 记录客户端真实 IP
+        logger(`new connent: ${clientIP}`);
+
+        // 判断是否在白名单中, 如果不在白名单中则拒绝连接
+        if(!rdpManager.isAnyWhiteList(clientIP)){
+          logger(`refuse connent: ${clientIP}`);
+          clientSocket.end();
+          return;
+        }
+
+        logger(`rdp connent from: ${clientIP}`);
+
+        // 先开启RDP服务
+        await rdpManager.enableRDP();
+        rdpManager.reSet()
 
         // 跳过 Proxy Protocol 头部，获取实际 RDP 数据
         const rdpData = data.slice(16 + length);
@@ -91,12 +108,20 @@ const server = net.createServer((clientSocket) => {
         });
 
         // 连接关闭
-        rdpSocket.on('end', () => clientSocket.end());
-        clientSocket.on('end', () => rdpSocket.end());
+        rdpSocket.on('end', () => {
+          clientSocket.end()
+          logger('RDP connection closed');
+        });
+        clientSocket.on('end', () => {
+          rdpSocket.end()
+          logger(`connention closed: ${clientIP}`);
+        });
       } else {
+        logger('Invalid Proxy Protocol header');
         throw new Error('Invalid Proxy Protocol header');
       }
     } catch (err) {
+      logger(`Error processing data: ${err.message}`);
       console.error(`Error processing data: ${err.message}`);
       clientSocket.end();
     }
@@ -108,18 +133,19 @@ const server = net.createServer((clientSocket) => {
 // 服务器错误处理
 server.on('error', (err) => {
   console.error('Server error:', err.message);
+  logger(`Server error: ${err.message}`);
 });
 
 // 启动服务器
 const start = () => {
   server.listen(LISTEN_PORT, () => {
-    console.log(`Proxy middleware listening on port ${LISTEN_PORT}`);
+    console.log(`RDP Proxy listening on port ${LISTEN_PORT}`);
   });
 }
 
 const stop = () => {
   server.close(() => {
-    console.log('Proxy middleware stopped');
+    console.log('RDP Proxy stopped');
   });
 }
 

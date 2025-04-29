@@ -1,6 +1,6 @@
 {
   "PORT": 9107,
-  "LOCAL_PORT": 13389,
+  "RDP_PROXY_PORT": 13389,
   "RDP_PORT": 3389,
   "USERNAME": "admin",
   "PASSWORD": "password123"

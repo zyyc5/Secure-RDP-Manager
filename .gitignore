@@ -3,3 +3,4 @@ node_modules
 frpc/frpc.toml
 package-lock.json
 *.log
+*.ini
