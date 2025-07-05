@@ -1,6 +1,6 @@
 daemon
 node_modules
-frpc/frpc.toml
+*/frpc.toml
 package-lock.json
 *.log
 *.ini

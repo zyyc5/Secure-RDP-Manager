@@ -1,0 +1,27 @@
+version: "3.8"
+
+services:
+  secure-frp-proxy:
+    build: .
+    container_name: secure-frp-proxy
+    ports:
+      - "9108:9108" # Web管理界面
+      - "13389:13389" # RDP代理端口
+    environment:
+      - NODE_ENV=production
+      - PORT=9108
+      - RDP_PROXY_PORT=13389
+      - RDP_PORT=3389
+      - USERNAME=admin
+      - PASSWORD=password123
+    volumes:
+      - ./config:/app/config # 配置文件挂载
+      - ./frpc:/app/frpc # frpc可执行文件挂载
+      - ./log:/app/log # 日志文件挂载
+    restart: unless-stopped
+    networks:
+      - secure-rdp-network
+
+networks:
+  secure-rdp-network:
+    driver: bridge

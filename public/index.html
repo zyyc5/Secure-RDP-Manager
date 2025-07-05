@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Secure FRP Proxy</title>
+  <!-- Element Plus CSS -->
+  <link rel="stylesheet" href="https://unpkg.com/element-plus/dist/index.css">
+  <!-- 自定义样式 -->
+  <link rel="stylesheet" href="css/modern-styles.css">
+</head>
+
+<body>
+  <div id="app">
+    <!-- 加载状态 -->
+    <el-loading v-if="loading" :fullscreen="true" text="正在加载页面数据..."></el-loading>
+
+    <!-- 主内容区域 -->
+    <div v-show="!loading" class="app-container">
+      <!-- 头部 -->
+      <el-header class="app-header">
+        <div class="header-content">
+          <h1 class="app-title">
+            <el-icon>
+              <Monitor />
+            </el-icon>
+            Secure FRP Proxy
+          </h1>
+          <el-button @click="refreshData" :loading="refreshing" type="primary" size="small">
+            <el-icon>
+              <Refresh />
+            </el-icon>
+            刷新
+          </el-button>
+        </div>
+      </el-header>
+
+      <!-- 主要内容 -->
+      <el-main class="app-main">
+        <el-row :gutter="20">
+          <!-- RDP服务状态卡片 - 仅在Windows系统显示 -->
+          <el-col :xs="24" :sm="12" :md="8" v-if="pageData.isWindows">
+            <el-card class="status-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon>
+                    <Connection />
+                  </el-icon>
+                  <span>RDP服务状态</span>
+                </div>
+              </template>
+              <div class="status-content">
+                <div class="status-switch-container">
+                  <div class="status-info">
+                    <el-tag :type="getRdpStatusType()" size="large">
+                      {{ pageData.rdpStatus }}
+                    </el-tag>
+                  </div>
+                  <el-switch v-model="rdpSwitchValue" :loading="rdpLoading"
+                    :disabled="pageData.rdpEnableDisabled === 'none' && pageData.rdpDisableDisabled === 'none'"
+                    active-color="#67c23a" inactive-color="#f56c6c" @change="toggleRdp" />
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 白名单管理卡片 -->
+          <el-col :xs="24" :sm="12" :md="pageData.isWindows ? 8 : 12">
+            <el-card class="status-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon>
+                    <User />
+                  </el-icon>
+                  <span>白名单管理</span>
+                </div>
+              </template>
+              <div class="status-content">
+                <div class="status-switch-container">
+                  <div class="status-info">
+                    <div class="ip-info">
+                      <!-- <el-text>当前IP：</el-text>
+                      <el-tag type="info"></el-tag> -->
+                    </div>
+                    <el-tag :type="getWhitelistStatusType()" class="ml-2">
+                      {{ pageData.IP }} <br>{{ pageData.whiteListStatus }}
+                    </el-tag>
+                  </div>
+                  <el-switch v-model="whitelistSwitchValue" :loading="whitelistLoading"
+                    :disabled="pageData.whiteListJoinDisabled === 'none' && pageData.whiteListRemoveDisabled === 'none'"
+                    active-color="#67c23a" inactive-color="#f56c6c" @change="toggleWhitelist" />
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+
+          <!-- 代理状态卡片 -->
+          <el-col :xs="24" :sm="12" :md="pageData.isWindows ? 8 : 12">
+            <el-card class="status-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <el-icon>
+                    <Share />
+                  </el-icon>
+                  <span>frp代理状态</span>
+                </div>
+              </template>
+              <div class="status-content">
+                <div class="status-switch-container">
+                  <div class="status-info">
+                    <el-tag :type="getProxyStatusType()" size="large">
+                      {{ pageData.proxyStatus }}
+                    </el-tag>
+                  </div>
+                  <el-switch v-model="proxySwitchValue" :loading="proxyLoading"
+                    :disabled="pageData.proxyOpenDisabled === 'none' && pageData.proxyCloseDisabled === 'none'"
+                    active-color="#67c23a" inactive-color="#f56c6c" @change="toggleProxy" />
+                </div>
+              </div>
+            </el-card>
+          </el-col>
+        </el-row>
+
+        <!-- 代理目标地址管理 -->
+        <el-card class="targets-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon>
+                <Location />
+              </el-icon>
+              <span>代理目标地址管理</span>
+              <el-button @click="showTargetDialog" type="primary" size="small">
+                <el-icon>
+                  <Plus />
+                </el-icon>
+                添加目标
+              </el-button>
+            </div>
+          </template>
+
+          <div class="current-target">
+            <el-text>当前目标：</el-text>
+            <el-tag type="primary" size="large">
+              {{ getCurrentTargetName() }}
+            </el-tag>
+          </div>
+
+          <el-empty v-if="proxyTargets.length === 0" description="暂无目标地址"></el-empty>
+          <el-row :gutter="16" v-if="proxyTargets.length > 0">
+            <el-col :xs="24" :sm="12" :md="8" v-for="target in proxyTargets" :key="target.id">
+              <el-card class="target-item" :class="{ 'current-target': target.id === currentTargetId }" shadow="hover">
+                <template #header>
+                  <div class="target-header">
+                    <span>{{ target.name }}</span>
+                    <el-tag v-if="target.id === currentTargetId" type="success" size="small">当前</el-tag>
+                  </div>
+                </template>
+                <div class="target-info">
+                  <el-descriptions :column="1" size="small">
+                    <el-descriptions-item label="地址">{{ target.host }}:{{ target.port }}</el-descriptions-item>
+                    <el-descriptions-item v-if="target.description" label="描述">{{ target.description
+                      }}</el-descriptions-item>
+                  </el-descriptions>
+                </div>
+                <div class="target-actions">
+                  <el-button v-if="target.id !== currentTargetId" @click="setCurrentTarget(target.id)" type="primary"
+                    size="small">
+                    设为当前
+                  </el-button>
+                  <el-button v-else disabled size="small">
+                    当前目标
+                  </el-button>
+                  <el-button @click="deleteTarget(target.id)" type="danger" size="small">
+                    删除
+                  </el-button>
+                </div>
+              </el-card>
+            </el-col>
+          </el-row>
+        </el-card>
+
+        <!-- 密码修改 -->
+        <el-card class="password-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <el-icon>
+                <Lock />
+              </el-icon>
+              <span>密码管理</span>
+            </div>
+          </template>
+          <el-button @click="showPasswordDialog" type="warning">
+            <el-icon>
+              <Edit />
+            </el-icon>
+            修改密码
+          </el-button>
+        </el-card>
+      </el-main>
+    </div>
+
+    <!-- 密码修改对话框 -->
+    <el-dialog v-model="passwordDialogVisible" title="修改密码" width="400px">
+      <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="80px">
+        <el-form-item label="用户名" prop="userName">
+          <el-input v-model="passwordForm.userName" placeholder="请输入用户名" />
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input v-model="passwordForm.newPassword" type="password" placeholder="请输入新密码" show-password />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword">
+          <el-input v-model="passwordForm.confirmPassword" type="password" placeholder="请确认新密码" show-password />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="passwordDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitPasswordChange" :loading="passwordLoading">
+            确认修改
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 添加目标地址对话框 -->
+    <el-dialog v-model="targetDialogVisible" title="添加代理目标地址" width="500px">
+      <el-form :model="targetForm" :rules="targetRules" ref="targetFormRef" label-width="80px">
+        <el-form-item label="名称" prop="name">
+          <el-input v-model="targetForm.name" placeholder="例如：办公室服务器" />
+        </el-form-item>
+        <el-form-item label="主机地址" prop="host">
+          <el-input v-model="targetForm.host" placeholder="例如：192.168.1.100" />
+        </el-form-item>
+        <el-form-item label="端口" prop="port">
+          <el-input-number v-model="targetForm.port" :min="1" :max="65535" placeholder="3389" style="width: 100%" />
+        </el-form-item>
+        <el-form-item label="描述" prop="description">
+          <el-input v-model="targetForm.description" type="textarea" :rows="3" placeholder="可选描述信息" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="targetDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="submitTargetAdd" :loading="targetLoading">
+            添加
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
+  </div>
+
+  <!-- Vue 3 Production -->
+  <script src="https://unpkg.com/vue@3/dist/vue.global.prod.js"></script>
+  <!-- Element Plus Production -->
+  <script src="https://unpkg.com/element-plus/dist/index.full.min.js"></script>
+  <!-- Element Plus Icons -->
+  <script src="https://unpkg.com/@element-plus/icons-vue@2.3.1/dist/index.iife.js"></script>
+  <!-- 应用脚本 -->
+  <script src="js/modern-app.js"></script>
+</body>
+
+</html>

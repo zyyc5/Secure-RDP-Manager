@@ -1,23 +1,30 @@
 const { Service } = require("node-windows");
 const path = require("path");
 const exec = require("child_process").exec;
-const PORT = require("./config").PORT;
+const configManager = require("./src/utils/config");
 
 // 创建Windows服务
 const appSvc = new Service({
-  name: "SecureRDP-ManagerService",
+  name: "SecureFrp-ProxyService",
   description: "Secure Expose RDP service",
   runAsAdmin: true,
-  script: path.join(__dirname, "app.js"),
+  script: path.join(__dirname, "src", "app.js"),
 });
 
 appSvc.on("install", () => {
   appSvc.start();
   console.log("Windows服务已安装并启动");
 });
-appSvc.on("start", () => {
+appSvc.on("start", async () => {
   console.log("Windows服务已启动");
-  exec(`start http://127.0.0.1:${PORT}`)
+  try {
+    await configManager.loadConfig();
+    const config = configManager.getAll();
+    const port = config.PORT || 9108;
+    exec(`start http://127.0.0.1:${port}`);
+  } catch (error) {
+    console.error("启动浏览器失败:", error);
+  }
 });
 
 appSvc.on("error", (err) => {
@@ -31,7 +38,16 @@ if (!appSvc.exists) {
   appSvc.install();
 } else {
   console.log("Windows服务已存在");
-  exec(`start http://127.0.0.1:${PORT}`)
+  (async () => {
+    try {
+      await configManager.loadConfig();
+      const config = configManager.getAll();
+      const port = config.PORT || 9108;
+      exec(`start http://127.0.0.1:${port}`);
+    } catch (error) {
+      console.error("启动浏览器失败:", error);
+    }
+  })();
 }
 
 

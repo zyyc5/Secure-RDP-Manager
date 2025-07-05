@@ -1,0 +1,45 @@
+{
+  "PORT": 9108,
+  "RDP_PROXY_PORT": 13389,
+  "RDP_PORT": 3389,
+  "USERNAME": "Administrator",
+  "PASSWORD": "password123",
+  "PROXY_TARGETS": [
+    {
+      "id": "default",
+      "name": "默认服务器",
+      "host": "127.0.0.1",
+      "port": 3389,
+      "description": "本地RDP服务"
+    },
+    {
+      "id": "1751687367063",
+      "name": "ssh",
+      "host": "192.168.50.35",
+      "port": 22,
+      "description": "docker server"
+    },
+    {
+      "id": "1751691493415",
+      "name": "NAS",
+      "host": "192.168.50.45",
+      "port": 5000,
+      "description": "NAS"
+    },
+    {
+      "id": "1751691880631",
+      "name": "TV",
+      "host": "192.168.50.11",
+      "port": 3389,
+      "description": ""
+    },
+    {
+      "id": "1751723144565",
+      "name": "baidu",
+      "host": "www.baidu.com",
+      "port": 80,
+      "description": ""
+    }
+  ],
+  "CURRENT_PROXY_TARGET": "1751723144565"
+}
