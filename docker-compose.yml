@@ -6,12 +6,11 @@ services:
     container_name: secure-frp-proxy
     ports:
       - "9108:9108" # Web管理界面
-      - "13389:13389" # RDP代理端口
+      - "13389:13389" # TCP代理端口
     environment:
       - NODE_ENV=production
       - PORT=9108
-      - RDP_PROXY_PORT=13389
-      - RDP_PORT=3389
+      - TCP_PROXY_PORT=13389
       - USERNAME=admin
       - PASSWORD=password123
     volumes:

@@ -1,7 +1,6 @@
 {
   "PORT": 9108,
-  "RDP_PROXY_PORT": 13389,
-  "RDP_PORT": 3389,
+  "TCP_PROXY_PORT": 13389,
   "USERNAME": "admin",
   "PASSWORD": "password123",
   "PROXY_TARGETS": [
@@ -11,7 +10,21 @@
       "host": "127.0.0.1",
       "port": 3389,
       "description": "本地RDP服务"
+    },
+    {
+      "id": "1751772865434",
+      "name": "NAS",
+      "host": "192.168.50.45",
+      "port": 5000,
+      "description": ""
+    },
+    {
+      "id": "1751794933238",
+      "name": "ssh",
+      "host": "192.168.50.35",
+      "port": 22,
+      "description": ""
     }
   ],
-  "CURRENT_PROXY_TARGET": "default"
+  "CURRENT_PROXY_TARGET": "1751772865434"
 }

@@ -33,9 +33,18 @@ EXPOSE 9108 13389
 RUN addgroup -g 1001 -S nodejs
 RUN adduser -S nodejs -u 1001
 
-# 更改文件所有权
-RUN chown -R nodejs:nodejs /app
-USER nodejs
+# 确保production.json存在（如果不存在则复制default.json）
+RUN if [ ! -f /app/config/production.json ]; then cp /app/config/default.json /app/config/production.json; fi
 
-# 启动应用
-CMD ["npm", "start"] 
+# 更改文件所有权并设置正确的权限
+RUN chown -R nodejs:nodejs /app
+RUN chmod -R 755 /app
+RUN chmod -R 664 /app/config/*.json
+RUN chmod 775 /app/config
+
+# 复制entrypoint脚本
+COPY docker-entrypoint.sh /app/docker-entrypoint.sh
+RUN chmod +x /app/docker-entrypoint.sh
+
+# 使用entrypoint脚本
+ENTRYPOINT ["/app/docker-entrypoint.sh"] 

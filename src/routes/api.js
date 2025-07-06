@@ -204,8 +204,9 @@ router.post('/change-password', async (req, res) => {
 // 获取页面数据的API
 router.get('/page-data', async (req, res) => {
   try {
+    const isWindows = process.platform === 'win32';
     const [appStatus, isFrpcInstalled, proxyStatus] = await Promise.all([
-      rdpManager.getRDPStatus(),
+      isWindows ? rdpManager.getRDPStatus() : Promise.resolve(false),
       frpc.isInstalled(),
       frpc.isProxyCommented('remote2'),
     ]);
@@ -220,7 +221,6 @@ router.get('/page-data', async (req, res) => {
       : `连接有效期至: ${new Date(Date.now() + 120000).toLocaleString()}`;
 
     // 检测操作系统
-    const isWindows = process.platform === 'win32';
 
     const pageData = {
       isWindows: isWindows,

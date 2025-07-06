@@ -1,8 +1,7 @@
 {
   "PORT": 9108,
-  "RDP_PROXY_PORT": 13389,
-  "RDP_PORT": 3389,
-  "USERNAME": "Administrator",
+  "TCP_PROXY_PORT": 13389,
+  "USERNAME": "admin",
   "PASSWORD": "password123",
   "PROXY_TARGETS": [
     {

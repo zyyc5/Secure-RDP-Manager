@@ -23,3 +23,5 @@ type = "tcp"
 localIP = "127.0.0.1"
 localPort = 13389
 remotePort = 19954 # 对应frps的暴露端口
+
+transport.proxyProtocolVersion = "v2"

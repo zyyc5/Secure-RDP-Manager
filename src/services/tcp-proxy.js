@@ -24,7 +24,7 @@ const getCurrentProxyTarget = () => {
     // 如果没有找到目标，使用默认配置
     return {
       host: '127.0.0.1',
-      port: config.RDP_PORT
+      port: '3389'
     };
   } catch (error) {
     console.error('获取代理目标失败:', error);
@@ -166,7 +166,7 @@ server.on('error', (err) => {
 // 启动服务器
 const start = () => {
   const config = configManager.getAll();
-  const LISTEN_PORT = config.RDP_PROXY_PORT;
+  const LISTEN_PORT = config.TCP_PROXY_PORT;
   
   server.listen(LISTEN_PORT, () => {
     console.log(`RDP Proxy listening on port ${LISTEN_PORT}`);

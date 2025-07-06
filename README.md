@@ -1,48 +1,60 @@
 # Secure-Frp-Proxy
 
-安全的暴露和管理你的RDP服务
+一个强大的TCP代理网关工具，基于Node.js开发，提供Web界面进行多协议代理管理和frpc内网穿透服务。
 
-Secure-Frp-Proxy 是一个基于 Node.js 的工具，用于管理和控制 Windows 系统上的远程桌面协议 (RDP) 服务和frpc代理服务。它提供了一个简单的 Web 界面，允许用户启用/禁用 RDP 服务、管理frpc代理。该工具旨在通过窗口机制和基本认证增强安全性, 避免RDP服务被扫描和爆破。
+![Secure-Frp-Proxy Web界面截图](sc.png)
 
-![SecureFrp-Proxy Web 界面截图](https://github.com/zyyc5/Secure-Frp-Proxy/raw/main/sc.png)
+## ✨ 功能特性
 
-## 功能
+### 🌐 TCP代理网关
 
-- **极简依赖**：仅依赖 `express` 和 `node-windows`，安装轻量，运行高效，避免复杂的依赖管理。
-  
-- **RDP 服务管理**：
-  - 查看 RDP 服务状态（启用/禁用）。
-  - 启用或禁用 RDP 服务。
-  - 窗口机制：启用 RDP 服务后,会开放访问窗口5分钟, 超过 5 分钟，将自动关闭（不会踢出已登录用户）。
-  
-- **代理管理**：
-  - 使用 `frpc`（FRP 客户端）暴露 RDP 服务到公网。
-  - 开启/关闭代理功能。
+- **多协议支持**：支持RDP、SSH、HTTP、HTTPS等多种TCP协议代理
+- **动态目标切换**：支持配置多个代理目标，实时切换
+- **Proxy Protocol v2**：完整支持HAProxy Proxy Protocol v2协议
+- **智能路由**：根据客户端请求自动路由到对应目标服务
 
-- **安全性**：
-  - 使用基本认证（Basic Auth）保护 Web 界面。
-  - 支持动态修改认证凭据。
-  - 不影响 RDP 服务的其他功能。
+### 🔐 安全防护
 
-- **Windows 服务**：
-  - 可作为 Windows 服务运行，确保开机自启和管理便利。
+- **IP白名单**：支持静态和动态IP白名单管理
+- **访问控制**：基于IP地址的访问权限控制
+- **连接日志**：详细的连接日志记录和监控
+- **安全认证**：Web界面Basic Auth认证保护
 
-## 安装
+### 🚀 代理管理
 
-### 前提条件
+- **frpc集成**：内置frpc客户端，支持内网穿透
+- **多目标代理**：支持配置多个代理目标（RDP、SSH、HTTP等）
+- **代理状态管理**：开启/关闭代理功能，实时状态显示
+- **连接监控**：实时监控代理连接状态和流量
 
-- 系统：Windows 或 Linux
-- Node.js：版本 14 或以上。
-- `frpc`（可选）：若需公网代理功能，需安装并配置 FRP 客户端。
-- Docker（可选）：支持Docker部署。
+### 🖥️ 系统管理（Windows）
 
-### 步骤
+- **RDP服务管理**：可选的Windows RDP服务控制
+- **Windows服务集成**：支持安装为Windows系统服务
+- **自动超时**：RDP服务启用后5分钟自动关闭（安全机制）
+
+### 🐳 Docker支持
+
+- **容器化部署**：提供完整的Docker部署方案
+- **环境变量配置**：支持通过环境变量覆盖配置
+- **数据持久化**：配置文件、日志等数据持久化存储
+
+## 📋 系统要求
+
+- **操作系统**：Windows 10/11 或 Linux
+- **Node.js**：版本 14.0.0 或以上
+- **权限要求**：Windows下需要管理员权限（用于RDP服务管理）
+- **网络**：需要网络访问权限（用于frpc代理功能）
+
+## 🚀 快速开始
+
+### 方法一：直接安装
 
 1. **克隆项目**
 
    ```bash
    git clone https://github.com/zyyc5/Secure-Frp-Proxy.git
-   cd secure-frp-proxy
+   cd Secure-Frp-Proxy
    ```
 
 2. **安装依赖**
@@ -51,139 +63,311 @@ Secure-Frp-Proxy 是一个基于 Node.js 的工具，用于管理和控制 Windo
    npm install
    ```
 
-3. **配置**
-   - 编辑 `config.json` 文件，设置端口、用户名和密码：
+3. **配置应用**
 
-    ```json
-    {
-      "PORT": 9107,
-      "USERNAME": "admin",
-      "PASSWORD": "password123"
-    }
-    ```
+   编辑 `config/default.json` 文件：
 
-   - （可选）若使用代理功能，需在 `frpc` 目录下放置 frpc 可执行文件，在 `config` 目录下放置 `frpc.toml` 配置文件。
-   - Windows系统：放置 `frpc.exe`
-   - Linux系统：放置 `frpc`（确保有执行权限）
-   - 可自行下载frpc,下载后替换frpc目录下的可执行文件; 项目地址：[https://github.com/fatedier/frp](https://github.com/fatedier/frp)
-   - 配置文件位于 `config/` 目录（包含whitelist.ini和frpc.toml）
-   - 日志文件位于 `log/` 目录
+   ```json
+   {
+     "PORT": 9108,
+     "TCP_PROXY_PORT": 13389,
+     "USERNAME": "admin",
+     "PASSWORD": "your_secure_password",
+     "PROXY_TARGETS": [
+       {
+         "id": "rdp-local",
+         "name": "本地RDP",
+         "host": "127.0.0.1",
+         "port": 3389,
+         "description": "本地RDP服务"
+       },
+       {
+         "id": "ssh-server",
+         "name": "SSH服务器",
+         "host": "192.168.1.100",
+         "port": 22,
+         "description": "远程SSH服务器"
+       },
+       {
+         "id": "web-server",
+         "name": "Web服务",
+         "host": "192.168.1.200",
+         "port": 80,
+         "description": "内部Web服务"
+       }
+     ]
+   }
+   ```
 
-4. **运行项目**
+4. **启动应用**
 
    ```bash
    npm start
    ```
 
-   Web 服务将运行在 `http://localhost:9107`，通过浏览器访问。
+5. **访问管理界面**
 
-5. **（可选）安装为 Windows 服务**（仅Windows系统）
+   打开浏览器访问：`http://localhost:9108`
 
-   ```bash
-   npm run install-service
-   ```
+   使用配置的用户名和密码登录
 
-   - 服务名称：`SecureFrp-ProxyService`
-   - 安装后将自动启动，并打开浏览器访问管理页面。
-
-6. **（可选）卸载服务**（仅Windows系统）
-
-   ```bash
-   npm run uninstall-service
-   ```
-
-### Docker 部署
+### 方法二：Docker部署
 
 1. **快速启动**
 
    ```bash
-   # 构建并启动容器（后台运行）
+   # 构建并启动容器
    docker-compose up -d
    
-   # 查看容器状态
+   # 查看运行状态
    docker-compose ps
-   
-   # 查看日志
+   ```
+
+2. **查看日志**
+
+   ```bash
    docker-compose logs -f
    ```
 
-2. **测试构建**
+3. **停止服务**
 
    ```bash
-   # Linux/macOS
-   chmod +x docker-test.sh
-   ./docker-test.sh
-   
-   # Windows
-   docker-test.bat
-   ```
-
-3. **手动构建**
-
-   ```bash
-   # 构建镜像
-   docker build -t secure-frp-proxy .
-   
-   # 运行容器
-   docker run -d \
-     --name secure-frp-proxy \
-     -p 9108:9108 \
-     -p 13389:13389 \
-     -v $(pwd)/config:/app/config \
-     -v $(pwd)/frpc:/app/frpc \
-     -v $(pwd)/whitelist.ini:/app/whitelist.ini \
-     -v $(pwd)/log:/app/log \
-     secure-frp-proxy
-   ```
-
-4. **管理命令**
-
-   ```bash
-   # 停止容器
    docker-compose down
-   
-   # 重启容器
-   docker-compose restart
-   
-   # 进入容器
-   docker exec -it secure-frp-proxy sh
    ```
 
-详细说明请参考 [DOCKER.md](DOCKER.md) 文件。
+## ⚙️ 配置说明
 
-### 环境变量配置
+### 环境变量
 
 支持通过环境变量覆盖配置：
 
-- `PORT`: Web服务端口（默认：9108）
-- `RDP_PROXY_PORT`: RDP代理端口（默认：13389）
-- `RDP_PORT`: RDP服务端口（默认：3389）
-- `USERNAME`: 管理界面用户名（默认：admin）
-- `PASSWORD`: 管理界面密码（默认：password123）
-- `NODE_ENV`: 环境模式（default/production）
-- `CONFIG_DIR`: 配置文件目录
+| 变量名 | 默认值 | 说明 |
+|--------|--------|------|
+| `PORT` | 9108 | Web管理界面端口 |
+| `TCP_PROXY_PORT` | 13389 | TCP代理网关端口 |
+| `USERNAME` | admin | 管理界面用户名 |
+| `PASSWORD` | password123 | 管理界面密码 |
+| `NODE_ENV` | default | 环境模式（default/production） |
 
-## 使用说明
+### 代理目标配置
 
-1. **访问 Web 界面**
-   - 打开浏览器，输入 `http://localhost:9107`（或配置文件中的端口）。
-   - 输入用户名和密码（默认 `admin`/`password123`）进行登录。
+支持配置多种类型的代理目标：
 
-2. **管理 RDP 服务**
-   - 点击“开启服务”或“关闭服务”按钮控制 RDP。
-   - 状态将实时更新为“已启用”或“已关闭”。
+```json
+{
+  "id": "unique-id",
+  "name": "目标名称",
+  "host": "目标主机地址",
+  "port": 目标端口,
+  "description": "目标描述"
+}
+```
 
-3. **管理代理**
-   - 若 `frpc` 已安装，可点击“开启代理”或“关闭代理”切换状态。
-   - 代理状态显示为“开启”、“关闭”或“未安装”。
+### frpc配置
 
-4. **修改密码**
-   - 点击“修改密码”按钮，弹出窗口。
-   - 输入用户名、新密码和确认密码，提交后需重新登录。
+如需使用frpc内网穿透功能：
 
-## 注意事项
+1. **下载frpc**
+   - 从 [frp releases](https://github.com/fatedier/frp/releases) 下载对应版本
+   - Windows: 下载 `frpc.exe` 到 `frpc/` 目录
+   - Linux: 下载 `frpc` 到 `frpc/` 目录并设置执行权限
 
-- **权限**：部分操作（如修改注册表、启动服务）需要管理员权限，请以管理员身份运行命令。
-- **代理配置**：若未安装 `frpc`，代理功能不可用，需手动下载并配置。
-- **安全性**：默认密码较弱，建议首次登录后立即修改。
-- **窗口机制**：RDP 服务启用 5 分钟后，将自动关闭以提高安全性。
+2. **配置frpc**
+   - 复制 `config/frpc.toml.example` 为 `config/frpc.toml`
+   - 编辑配置文件，设置frps服务器地址和认证信息
+
+## 🔧 使用说明
+
+### Web界面操作
+
+1. **登录管理界面**
+   - 访问 `http://localhost:9108`
+   - 输入配置的用户名和密码
+
+2. **代理目标管理**
+   - 查看当前代理目标
+   - 添加新的代理目标
+   - 切换当前代理目标
+   - 删除不需要的代理目标
+
+3. **白名单管理**
+   - 查看当前IP状态
+   - 添加IP到白名单
+   - 从白名单移除IP
+
+4. **代理服务控制**
+   - 开启/关闭frpc代理服务
+   - 查看代理运行状态
+
+5. **系统管理（Windows）**
+   - 启用/禁用RDP服务
+   - 查看RDP服务状态
+
+6. **密码修改**
+   - 修改管理界面密码
+
+### 代理网关使用
+
+1. **连接代理网关**
+
+   ```bash
+   # 使用Proxy Protocol v2连接
+   # 目标：localhost:13389
+   # 协议：支持RDP、SSH、HTTP等TCP协议
+   ```
+
+2. **配置客户端**
+   - RDP客户端：连接到 `localhost:13389`
+   - SSH客户端：连接到 `localhost:13389`
+   - 其他TCP客户端：连接到 `localhost:13389`
+
+3. **白名单配置**
+   - 编辑 `config/whitelist.ini` 文件
+   - 添加允许访问的IP地址
+   - 支持动态白名单管理
+
+### Windows服务安装
+
+```bash
+# 安装为Windows服务
+npm run install-service
+
+# 卸载服务
+npm run uninstall-service
+```
+
+服务名称：`SecureFrpProxyService`
+
+### 命令行操作
+
+```bash
+# 开发模式启动
+npm run dev
+
+# 生产模式启动
+npm run prod
+
+# 查看帮助
+node src/app.js --help
+```
+
+## 📁 项目结构
+
+```
+Secure-Frp-Proxy/
+├── config/                 # 配置文件目录
+│   ├── default.json       # 默认配置
+│   ├── production.json    # 生产配置
+│   ├── whitelist.ini     # IP白名单配置
+│   └── frpc.toml.example # frpc配置示例
+├── src/                   # 源代码
+│   ├── app.js            # 主应用文件
+│   ├── controllers/      # 控制器
+│   ├── routes/           # 路由
+│   ├── services/         # 服务层
+│   │   ├── tcp-proxy.js # TCP代理网关
+│   │   ├── rdp-manager.js # RDP服务管理
+│   │   └── frpc-manager.js # frpc代理管理
+│   └── utils/            # 工具类
+├── public/               # 静态资源
+│   ├── css/             # 样式文件
+│   ├── js/              # JavaScript文件
+│   └── index.html       # 主页面
+├── frpc/                # frpc可执行文件
+├── log/                 # 日志目录
+├── docker-compose.yml   # Docker编排文件
+├── Dockerfile          # Docker镜像文件
+└── package.json        # 项目配置
+```
+
+## 🔒 安全建议
+
+1. **修改默认密码**
+   - 首次使用后立即修改默认密码
+   - 使用强密码（包含大小写字母、数字、特殊字符）
+
+2. **网络访问控制**
+   - 限制管理界面访问IP
+   - 使用防火墙规则保护端口
+   - 配置IP白名单
+
+3. **frpc安全配置**
+   - 使用强认证密钥
+   - 配置访问白名单
+   - 定期更新frpc版本
+
+4. **日志监控**
+   - 定期检查日志文件
+   - 监控异常访问行为
+   - 设置日志轮转
+
+## 🐛 故障排除
+
+### 常见问题
+
+1. **TCP代理连接失败**
+   - 检查代理目标配置
+   - 确认目标服务可访问
+   - 查看代理日志
+
+2. **IP白名单问题**
+   - 检查白名单配置文件
+   - 确认IP地址格式正确
+   - 查看连接日志
+
+3. **frpc连接失败**
+   - 验证frpc配置文件
+   - 检查网络连接
+   - 确认frps服务器状态
+
+4. **Web界面无法访问**
+   - 检查端口是否被占用
+   - 确认防火墙设置
+   - 查看应用日志
+
+5. **Docker容器启动失败**
+   - 检查端口映射
+   - 确认挂载目录权限
+   - 查看容器日志
+
+### 日志查看
+
+```bash
+# 查看应用日志
+tail -f log/app.log
+
+# 查看代理连接日志
+tail -f log/proxy_connections.log
+
+# 查看Docker容器日志
+docker-compose logs -f
+
+# 查看Windows服务日志
+eventvwr.msc
+```
+
+## 📄 许可证
+
+本项目采用 ISC 许可证 - 查看 [LICENSE](LICENSE) 文件了解详情。
+
+## 🤝 贡献
+
+欢迎提交 Issue 和 Pull Request！
+
+1. Fork 本项目
+2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
+3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
+4. 推送到分支 (`git push origin feature/AmazingFeature`)
+5. 打开 Pull Request
+
+## 📞 支持
+
+如果您遇到问题或有建议，请：
+
+1. 查看 [Issues](https://github.com/zyyc5/Secure-Frp-Proxy/issues)
+2. 创建新的 Issue
+3. 提供详细的错误信息和环境描述
+
+---
+
+**注意**：本工具仅用于合法的网络代理需求，请遵守相关法律法规。
